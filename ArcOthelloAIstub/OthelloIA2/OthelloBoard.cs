@@ -32,6 +32,12 @@ namespace IAStub
             initBoard();
         }
 
+        public OthelloBoard(OthelloBoard other)
+        {
+            this.theBoard = (int[,]) other.GetBoard().Clone();
+            this.computeScore();
+        }
+
 
         public void DrawBoard()
         {
@@ -81,7 +87,7 @@ namespace IAStub
             if (possibleMoves.Count == 0)
                 return new Tuple<int, int>(-1, -1);
             else
-                return possibleMoves.ElementAt(rnd.Next(possibleMoves.Count)); // TODO: ADD YOUR CODE HERE
+                return alphaBeta(possibleMoves, level, whiteTurn);
         }
 
         public bool PlayMove(int column, int line, bool isWhite)
@@ -275,6 +281,80 @@ namespace IAStub
             }
             GameFinish = ((whiteScore == 0) || (blackScore == 0) ||
                         (whiteScore + blackScore == 63));
+        }
+
+        private Tuple<int, int> alphaBeta(List<Tuple<int, int>> possibleMoves, int level, bool whiteTurn)
+        {
+            Tuple<int, Tuple<int, int>> bestMove = alphaBetaMax(this, int.MinValue, whiteTurn);
+            return bestMove.Item2;
+        }
+
+
+        private Tuple<int, Tuple<int, int>> alphaBetaMax(OthelloBoard root,int scoreParent, bool whiteTurn, int depth = 5)
+        {
+            if(depth == 0 || this.GameFinish == true)
+            {
+                return new Tuple<int, Tuple<int, int>>(evaluateGameState(whiteTurn), null);
+            }
+
+            int maxVal = int.MinValue;
+            Tuple<int, int> maxOp = null;
+
+            foreach (Tuple<int, int> move in root.GetPossibleMove(whiteTurn))
+            {
+                OthelloBoard tempOthelloBoard = new OthelloBoard(this);
+                tempOthelloBoard.PlayMove(move.Item1, move.Item2, false);
+                Tuple<int, Tuple<int,int>> score = tempOthelloBoard.alphaBetaMin(tempOthelloBoard, maxVal, !whiteTurn, depth - 1);
+                if (score.Item1 > maxVal)
+                {
+                    maxVal = score.Item1;
+                    maxOp = move;
+                    if (maxVal > scoreParent)
+                    {
+                        break;
+                    }
+                }
+
+            }
+            return new Tuple<int, Tuple<int, int>>(maxVal, maxOp);
+        }
+        private Tuple<int, Tuple<int,int>> alphaBetaMin(OthelloBoard root, int scoreParent, bool whiteTurn, int depth = 5)
+        {
+            if (depth == 0 || this.GameFinish == true)
+            {
+                return new Tuple<int, Tuple<int, int>>(evaluateGameState(!whiteTurn), null);
+            }
+
+            int minVal = int.MaxValue;
+            Tuple<int, int> minOp = null;
+
+            foreach (Tuple<int, int> move in root.GetPossibleMove(whiteTurn))
+            {
+                OthelloBoard tempOthelloBoard = new OthelloBoard(this);
+                tempOthelloBoard.PlayMove(move.Item1, move.Item2, false);
+                Tuple<int, Tuple<int,int>> score = tempOthelloBoard.alphaBetaMin(tempOthelloBoard, minVal, !whiteTurn, depth - 1);
+                if (score.Item1 < minVal)
+                {
+                    minVal = score.Item1;
+                    minOp = move;
+                    if (minVal < scoreParent)
+                    {
+                        break;
+                    }
+                }
+
+            }
+            return new Tuple<int, Tuple<int, int>>(minVal, minOp);
+        }
+
+        private int evaluateGameState(bool isWhite)
+        {
+            if(isWhite)
+            {
+                return this.whiteScore - this.blackScore;
+            }
+
+            return this.blackScore - this.whiteScore;
         }
     }
 
