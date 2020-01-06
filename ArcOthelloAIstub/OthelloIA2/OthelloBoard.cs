@@ -19,6 +19,16 @@ namespace IAStub
     {
         const int BOARDSIZE_X = 9;
         const int BOARDSIZE_Y = 7;
+        readonly int[] coeff = {100, -20, 10, 5, 5, 5, 10, -20, 100,
+                             -20, -50, -2, -2, -2, -2, -2, -50, -20,
+                             10, -2, -1, -1, -1, -1, -1, -2, 10,
+                             5, -2, -1, -1, -1, -1, -1, -2, 5,
+                             10, -2, -1, -1, -1, -1, -1, -2, 10,
+                             -20, -50, -2, -2, -2, -2, -2, -50, -20,
+                             100, -20, 10, 5, 5, 5, 10, -20, 100
+        };
+
+        const int LATE_GAME_TRIGGER = 50;
 
         int[,] theBoard = new int[BOARDSIZE_X, BOARDSIZE_Y];
         int whiteScore = 0;
@@ -72,7 +82,7 @@ namespace IAStub
         #region IPlayable
         public int GetWhiteScore() { return whiteScore; }
         public int GetBlackScore() { return blackScore; }
-        public string GetName() { return "random"; }
+        public string GetName() { return "DR & TS"; }
 
         /// <summary>
         /// plays randomly amon the possible moves
@@ -80,7 +90,7 @@ namespace IAStub
         /// <param name="game"></param>
         /// <param name="level"></param>
         /// <param name="whiteTurn"></param>
-        /// <returns>The move it will play, will return {P,0} if it has to PASS its turn (no move is possible)</returns>
+        /// <returns>The move it will play, will return {-1,-1} if it has to PASS its turn (no move is possible)</returns>
         public Tuple<int, int> GetNextMove(int[,] game, int level, bool whiteTurn)
         {
             List<Tuple<int, int>> possibleMoves = GetPossibleMove(whiteTurn);
@@ -285,14 +295,16 @@ namespace IAStub
 
         private Tuple<int, int> alphaBeta(List<Tuple<int, int>> possibleMoves, int level, bool whiteTurn)
         {
-            Tuple<int, Tuple<int, int>> bestMove = alphaBetaMax(this, int.MinValue, whiteTurn);
+            Tuple<int, Tuple<int, int>> bestMove = alphaBetaMax(int.MinValue, whiteTurn);
             return bestMove.Item2;
         }
 
 
-        private Tuple<int, Tuple<int, int>> alphaBetaMax(OthelloBoard root,int scoreParent, bool whiteTurn, int depth = 5)
+        private Tuple<int, Tuple<int, int>> alphaBetaMax(int scoreParent, bool whiteTurn, int depth = 5)
         {
-            if(depth == 0 || this.GameFinish == true)
+            List<Tuple<int, int>> possibleMove = this.GetPossibleMove(whiteTurn);
+
+            if (depth == 0 || this.GameFinish == true || possibleMove.Count == 0)
             {
                 return new Tuple<int, Tuple<int, int>>(evaluateGameState(whiteTurn), null);
             }
@@ -300,11 +312,11 @@ namespace IAStub
             int maxVal = int.MinValue;
             Tuple<int, int> maxOp = null;
 
-            foreach (Tuple<int, int> move in root.GetPossibleMove(whiteTurn))
+            foreach (Tuple<int, int> move in possibleMove)
             {
                 OthelloBoard tempOthelloBoard = new OthelloBoard(this);
                 tempOthelloBoard.PlayMove(move.Item1, move.Item2, false);
-                Tuple<int, Tuple<int,int>> score = tempOthelloBoard.alphaBetaMin(tempOthelloBoard, maxVal, !whiteTurn, depth - 1);
+                Tuple<int, Tuple<int,int>> score = tempOthelloBoard.alphaBetaMin(maxVal, !whiteTurn, depth - 1);
                 if (score.Item1 > maxVal)
                 {
                     maxVal = score.Item1;
@@ -318,9 +330,11 @@ namespace IAStub
             }
             return new Tuple<int, Tuple<int, int>>(maxVal, maxOp);
         }
-        private Tuple<int, Tuple<int,int>> alphaBetaMin(OthelloBoard root, int scoreParent, bool whiteTurn, int depth = 5)
+        private Tuple<int, Tuple<int,int>> alphaBetaMin(int scoreParent, bool whiteTurn, int depth = 5)
         {
-            if (depth == 0 || this.GameFinish == true)
+            List<Tuple<int, int>> possibleMove = this.GetPossibleMove(whiteTurn);
+
+            if (depth == 0 || this.GameFinish == true || possibleMove.Count == 0)
             {
                 return new Tuple<int, Tuple<int, int>>(evaluateGameState(!whiteTurn), null);
             }
@@ -328,11 +342,11 @@ namespace IAStub
             int minVal = int.MaxValue;
             Tuple<int, int> minOp = null;
 
-            foreach (Tuple<int, int> move in root.GetPossibleMove(whiteTurn))
+            foreach (Tuple<int, int> move in possibleMove)
             {
                 OthelloBoard tempOthelloBoard = new OthelloBoard(this);
                 tempOthelloBoard.PlayMove(move.Item1, move.Item2, false);
-                Tuple<int, Tuple<int,int>> score = tempOthelloBoard.alphaBetaMin(tempOthelloBoard, minVal, !whiteTurn, depth - 1);
+                Tuple<int, Tuple<int,int>> score = tempOthelloBoard.alphaBetaMax(minVal, !whiteTurn, depth - 1);
                 if (score.Item1 < minVal)
                 {
                     minVal = score.Item1;
@@ -349,13 +363,33 @@ namespace IAStub
 
         private int evaluateGameState(bool isWhite)
         {
-            if(isWhite)
+
+            int whiteScore = this.whiteScore;
+            int blackScore = this.blackScore;
+
+            int turn = whiteScore + blackScore - 4;
+
+            if (turn < LATE_GAME_TRIGGER)
             {
-                return this.whiteScore - this.blackScore;
+                for(int i=0; i<BOARDSIZE_Y; i++)
+                {
+                    for(int j=0; j<BOARDSIZE_X; j++)
+                    {
+                        if (theBoard[j,i] == 1)
+                            blackScore += coeff[i * BOARDSIZE_X + j];
+                        else if(theBoard[j,i] == 0)
+                            whiteScore += coeff[i * BOARDSIZE_X + j];
+                    }
+                }
             }
 
-            return this.blackScore - this.whiteScore;
+            if (isWhite)
+                return whiteScore - blackScore;
+            else
+                return blackScore - whiteScore;
+
         }
+
     }
 
 }
