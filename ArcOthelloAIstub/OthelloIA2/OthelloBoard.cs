@@ -28,7 +28,7 @@ namespace IAStub
                              100, -20, 10, 5, 5, 5, 10, -20, 100
         };
 
-        const int LATE_GAME_TRIGGER = 53;
+        const int LATE_GAME_TRIGGER = 50;
 
         int[,] theBoard = new int[BOARDSIZE_X, BOARDSIZE_Y];
         int whiteScore = 0;
@@ -366,11 +366,11 @@ namespace IAStub
             int whiteScore = this.whiteScore;
             int blackScore = this.blackScore;
 
-            int turn = whiteScore + blackScore - 4;
+            int nbPieces = whiteScore + blackScore;
             
-            if (turn < LATE_GAME_TRIGGER)
+            if (nbPieces <= LATE_GAME_TRIGGER)
             {
-                for(int i=0; i<BOARDSIZE_Y; i++)
+                for(int i=0; i < BOARDSIZE_Y; i++)
                 {
                     for(int j=0; j<BOARDSIZE_X; j++)
                     {
