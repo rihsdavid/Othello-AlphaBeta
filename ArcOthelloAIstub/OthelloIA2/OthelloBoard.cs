@@ -28,7 +28,7 @@ namespace IAStub
                              100, -20, 10, 5, 5, 5, 10, -20, 100
         };
 
-        const int LATE_GAME_TRIGGER = 50;
+        const int LATE_GAME_TRIGGER = 53;
 
         int[,] theBoard = new int[BOARDSIZE_X, BOARDSIZE_Y];
         int whiteScore = 0;
@@ -295,7 +295,7 @@ namespace IAStub
 
         private Tuple<int, int> alphaBeta(List<Tuple<int, int>> possibleMoves, int level, bool whiteTurn)
         {
-            Tuple<int, Tuple<int, int>> bestMove = alphaBetaMax(int.MinValue, whiteTurn);
+            Tuple<int, Tuple<int, int>> bestMove = alphaBetaMax(int.MaxValue, whiteTurn);
             return bestMove.Item2;
         }
 
@@ -363,12 +363,11 @@ namespace IAStub
 
         private int evaluateGameState(bool isWhite)
         {
-
             int whiteScore = this.whiteScore;
             int blackScore = this.blackScore;
 
             int turn = whiteScore + blackScore - 4;
-
+            
             if (turn < LATE_GAME_TRIGGER)
             {
                 for(int i=0; i<BOARDSIZE_Y; i++)
@@ -381,15 +380,14 @@ namespace IAStub
                             whiteScore += coeff[i * BOARDSIZE_X + j];
                     }
                 }
+                
             }
-
+            
             if (isWhite)
                 return whiteScore - blackScore;
             else
                 return blackScore - whiteScore;
-
         }
-
     }
 
 }
